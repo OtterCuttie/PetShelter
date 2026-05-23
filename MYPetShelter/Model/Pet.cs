@@ -54,11 +54,11 @@ namespace Model
 
         }
     }
-    public class Racoon : Pet
+    public class Raccoon : Pet
     {
         private int _destructionLevel; private bool _handFed;
         public int DestructionLevel => _destructionLevel; public bool HandFed => _handFed;
-        public Racoon(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
+        public Raccoon(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
         {
 
         }
