@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace Model
+namespace Model.Core
 {
     public partial class Pet
     {
@@ -18,58 +18,64 @@ namespace Model
             _name=name; _age=age; _weight=weight; _specialMarks = specialMarks;
         }
     }
-    public class Cat : Pet
+    public partial class Cat : Pet
     {
         private double _averageFurLength; private bool _catchesRodents;
         public double AverageFurLength => _averageFurLength; public bool CatchesRodentsme => _catchesRodents;
-        public Cat(string name, int age, double weigth,string specialMarks) : base(name, age, weigth, specialMarks)
-        { 
-        
+        public Cat(string name, int age, double weigth,string specialMarks, double averageFurLength,  bool catchesRodents) : base(name, age, weigth, specialMarks)
+        {
+            _averageFurLength = averageFurLength;
+            _catchesRodents = catchesRodents;
         }
     }
-    public class Dog : Pet
+    public partial class Dog : Pet
     {
         private string _breed; private bool _isTrained;
         public string Breed => _breed; public bool IsTrained => _isTrained;
-        public Dog(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
+        public Dog(string name, int age, double weigth, string specialMarks,  string breed, bool isTrained) : base(name, age, weigth, specialMarks)
         {
-
+            _breed = breed;
+            _isTrained = isTrained;
         }
     }
-    public class Rabbit : Pet
+    public partial class Rabbit : Pet
     {
         private string _fur; private double _lenghOfEars;
         public string Fur => _fur; public double LenghOfEarsg => _lenghOfEars;
-        public Rabbit(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
+        public Rabbit(string name, int age, double weigth, string specialMarks, string fur, double lenghOfEars) : base(name, age, weigth, specialMarks)
         {
-            
+            _fur = fur;
+            _lenghOfEars = lenghOfEars;
         }
     }
-    public class Fox : Pet
+    public partial class Fox : Pet
+    {
+        private int _huntingSkills; private bool _tamingLevel;
+        public int HuntingSkills => _huntingSkills; public bool TamingLevel => _tamingLevel;
+        public Fox(string name, int age, double weigth, string specialMarks, int huntingSkills, bool tamingLevel) : base(name, age, weigth, specialMarks)
         {
-            private int _huntingSkills; private bool _tamingLevel;
-            public int HuntingSkills => _huntingSkills; public bool TamingLevel => _tamingLevel;
-        public Fox(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
-        {
-
+            _huntingSkills = huntingSkills;
+            _tamingLevel = tamingLevel;
         }
     }
-    public class Raccoon : Pet
+    public partial class Raccoon : Pet
     {
         private int _destructionLevel; private bool _handFed;
         public int DestructionLevel => _destructionLevel; public bool HandFed => _handFed;
-        public Raccoon(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
+        public Raccoon(string name, int age, double weigth, string specialMarks, int destructionLevel, bool handFed) : base(name, age, weigth, specialMarks)
         {
-
+            _destructionLevel = destructionLevel;
+            _handFed = handFed;
         }
     }
-    public class Parrot : Pet
+    public partial class Parrot : Pet
     {
         private double _wingLength; private bool _isTalking;
         public double WingLength => _wingLength; public bool IsTalking => _isTalking;
-        public Parrot(string name, int age, double weigth, string specialMarks) : base(name, age, weigth, specialMarks)
+        public Parrot(string name, int age, double weigth, string specialMarks,  double wingLength, bool isTalking) : base(name, age, weigth, specialMarks)
         {
-
+            _wingLength = wingLength;
+            _isTalking = isTalking;
         }
     }
 
