@@ -50,9 +50,9 @@ namespace Model.Core
     }
     public partial class Fox : Pet
     {
-        private int _huntingSkills; private bool _tamingLevel;
-        public int HuntingSkills => _huntingSkills; public bool TamingLevel => _tamingLevel;
-        public Fox(string name, int age, double weigth, string specialMarks, int huntingSkills, bool tamingLevel) : base(name, age, weigth, specialMarks)
+        private bool _huntingSkills; private bool _tamingLevel;
+        public bool HuntingSkills => _huntingSkills; public bool TamingLevel => _tamingLevel;
+        public Fox(string name, int age, double weigth, string specialMarks, bool huntingSkills, bool tamingLevel) : base(name, age, weigth, specialMarks)
         {
             _huntingSkills = huntingSkills;
             _tamingLevel = tamingLevel;
