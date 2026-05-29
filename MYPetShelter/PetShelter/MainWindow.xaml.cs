@@ -1,20 +1,11 @@
+using Model;
+using Model.Data;
+using PetShelter.Wpf;
 using System;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using Model;
-using Model.Data;
-using System;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using PetShelter.Wpf;
 
 namespace PetShelter
 {
@@ -27,15 +18,10 @@ namespace PetShelter
         public MainWindow()
         {
             InitializeComponent(); // Загружает кнопки и списки из XAML
-
-            // Создаём менеджер данных
-            _dataManager = new DataManager();
-
-            // Загружаем приюты в выпадающий список
+            _dataManager = new DataManager();   //  менеджер данных
             LoadShelters();
-
-            // Показываем статус
-            statusText.Text = "Program is ready";
+            LoadrprtFormat();
+            _isInitializing = false;
         }
 
         // Загружает список приютов в комбобокс
@@ -49,74 +35,83 @@ namespace PetShelter
             shelters.Insert(0, allSheltersItem);   //Добавление элемента в нужную позицию со сдвигом остальных.
 
             // Заполняем выпадающий список
-            cmShelters.ItemsSource = shelters;
-            cmShelters.SelectedIndex = 0; // Выбираем "Все приюты" автоматически
+            cboxShelters.ItemsSource = shelters;
+            cboxShelters.DisplayMemberPath = "Название"; 
+            cboxShelters.SelectedIndex = 0; // Выбираем "Все приюты" автоматически
         }
 
         // Обработчик кнопки "Показать питомцев"
         private void BtnShow_Animals(object sender, RoutedEventArgs e)
         {
-            // 1. Берём то, что выбрал пользователь в выпадающем списке приютов
-            var selectedShelter = (Shelter<Pet>)cmShelters.SelectedItem;
-            if (selectedShelter.Name == "Все приюты")
-                selectedShelter = null; // ищем во всех приютах
-
-            // 2. выбранный тип животного
-            var selectedType = (ComboBoxItem)cmAnimalTypes.SelectedItem;
-            object content = selectedType.Content;
-            string typeText = content.ToString();
+            Shelter<Pet> chkShelter = null;
+            if (cboxShelters.SelectedItem == null)     chkShelter = null;
+            chkShelter = (Shelter<Pet>)cboxShelters.SelectedItem;         // 1.) выбранный приют
+            if (chkShelter.Name == "Все приюты") chkShelter = null;
 
             Type animalType = null;
+            if (cboxAnimalTypes.SelectedItem == null) animalType = null;
+            var chkType = (ComboBoxItem)cboxAnimalTypes.SelectedItem;         // 2.) выбранный тип животного
+            object contentT = chkType.Content;
+            string typeText = contentT.ToString();
+
             if (typeText == "Cat")      animalType = typeof(Cat);
             else if (typeText == "Dog")     animalType = typeof(Dog);
             else if (typeText == "Rabbit")      animalType = typeof(Rabbit);
             else if (typeText == "Fox")     animalType = typeof(Fox);
             else if (typeText == "Raccoon")   animalType = typeof(Raccoon);
             else if (typeText == "Parrot")      animalType = typeof(Parrot);
-            // Если "All", то animalType остаётся null
 
-            // 3. Проверяем, нужна ли только открытая территория
-            bool? onlyOpenArea = null;
-            if (chkOnlyOpenArea.IsChecked == true)
+                                                            // 3.) Проверяем, нужна ли только открытая территория
+            bool? onlyOpenArea = null; // bool? позволяет сделать переменную null (сам bool только true/false)
+            if (ckOnlyOpenArea.IsChecked == true)   onlyOpenArea = true; // если пользователь отметил галочку
+
+                                                            // 4.) фильтрация питомцев
+            var filteredPets = _dataManager.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
+
+
+             private void CboxRprtFormat(object sender, SelectionChangedEventArgs e)
+        {
+            // Пропускаем, если это начальная инициализация
+            if (_isInitializing) return;
+            string oldFormat = _dataManager.CurrentReportFormat;
+
+            ComboBoxItem selectedItem = (ComboBoxItem)cboxReportFormat.SelectedItem;
+            string newFormat = selectedItem.Content.ToString().ToLower();
+
+            if (oldFormat != newFormat)
             {
-                onlyOpenArea = true;
+                CopyAllReports(oldFormat, newFormat);
+                _dataManager.CurrentReportFormat = newFormat;
             }
-
-            // 4. Выполняем фильтрацию питомцев
-            var filteredPets = _dataManager.GetFilteredPets(
-                selectedShelter,
-                animalType,
-                onlyOpenArea
-            );
-
-            // 5. Показываем количество найденных питомцев
-            statusText.Text = "Found pets: " + filteredPets.Count;
-
-            // 6. Определяем формат отчёта
-            ComboBoxItem selectedFormat = (ComboBoxItem)cmbReportFormat.SelectedItem;
-            string formatName = selectedFormat.Content.ToString();
-
-            if (formatName == "JSON")
+        }
+            private void CopyAllReports(string oldFormat, string newFormat)
+        {
+            string reportsPath = Path.Combine(Directory.GetCurrentDirectory(), "Reports");
+            if (!Directory.Exists(reportsPath))  return;
+            string[] oldFiles = Directory.GetFiles(reportsPath, $"*.{oldFormat}");
+            foreach (string f in oldFiles)
             {
-                _dataManager.CurrentReportFormat = "json";
+                string text = File.ReadAllText(f);
+                string newFile = f.Replace(oldFormat, newFormat);
+                File.WriteAllText(newFile, text);
             }
-            else
-            {
-                _dataManager.CurrentReportFormat = "xml";
-            }
+        }
 
-            // 7. Сохраняем отчёт в файл
-            string reportPath = _dataManager.SaveCurrentReport(filteredPets, selectedShelter);
-            string fileName = System.IO.Path.GetFileName(reportPath);
-            statusText.Text = "Saved: " + fileName;
 
-            // 8. Открываем окно с таблицей результатов
-            ResultsWindow resultsWindow = new ResultsWindow(filteredPets, _dataManager, selectedShelter);
-            resultsWindow.Owner = this;
+        // 5.) формат отчёта
+        ComboBoxItem selectedFormat = (ComboBoxItem)cboxReportFormat.SelectedItem;
+            object contentF = selectedFormat.Content;               
+            string formatName = contentF.ToString();
+            if (formatName == "JSON")   _dataManager.CurrentReportFormat = "json";
+            else    _dataManager.CurrentReportFormat = "xml";
+
+                                                             // 6.) Сохраняем отчёт в файл
+            string rprtPath = _dataManager.SaveCurrentReport(filteredPets, chkShelter);
+            string fileName = System.IO.Path.GetFileName(rprtPath);
+
+                                                            // 7.) Открываем окно с таблицей результатов
+            ResultsWindow resultsWindow = new ResultsWindow(filteredPets, _dataManager, chkShelter);
             resultsWindow.ShowDialog();
-
-            // 9. Обновляем статус после закрытия окна
-            statusText.Text = "Ready";
         }
     }
 }
