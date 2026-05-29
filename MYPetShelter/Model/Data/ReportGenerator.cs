@@ -1,184 +1,152 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
-
+using Model.Core;
 namespace Model.Data
 {
     /// Генератор отчетов "Подборка_№Х_от_дата"
     public class ReportGenerator
     {
-        private readonly string _reportsDirectory;
-        private int _nextReportNumber;
+        private readonly string _reportsFolder;
 
-        public ReportGenerator(string reportsDirectory = "Reports")
+        public ReportGenerator(
+            string reportsFolder = "Reports")
         {
-            _reportsDirectory = reportsDirectory;
+            _reportsFolder = reportsFolder;
 
-            // Создаем директорию для отчетов
-            if (!Directory.Exists(_reportsDirectory))
-                Directory.CreateDirectory(_reportsDirectory);
-
-            // Определяем следующий номер отчета
-            _nextReportNumber = GetNextReportNumber();
-        }
-
-        /// Генерирует имя файла для отчета
-        private string GenerateReportName()
-        {
-            string dateStr = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-            return $"Подборка_{_nextReportNumber}_от_{dateStr}";
-        }
-
-        /// Сохраняет отфильтрованных питомцев в JSON файл
-        public string SaveReportAsJson(List<Pet> pets, Shelter<Pet> selectedShelter = null)
-        {
-            string reportName = GenerateReportName();
-            string fullPath = Path.Combine(_reportsDirectory, reportName);
-
-            var reportData = new ReportData
+            if (!Directory.Exists(_reportsFolder))
             {
-                ReportNumber = _nextReportNumber,
-                CreationDate = DateTime.Now,
-                SelectedShelter = selectedShelter?.Name ?? "Все приюты",
-                Pets = pets,
-                TotalCount = pets.Count
-            };
-
-            var jsonSerializer = new JsonFileManager();
-            jsonSerializer.Save(fullPath, reportData);
-
-            _nextReportNumber++;
-
-            return fullPath + ".json";
-        }
-
-        /// Сохраняет отфильтрованных питомцев в XML файл
-        public string SaveReportAsXml(List<Pet> pets, Shelter<Pet> selectedShelter = null)
-        {
-            string reportName = GenerateReportName();
-            string fullPath = Path.Combine(_reportsDirectory, reportName);
-
-            var reportData = new ReportData
-            {
-                ReportNumber = _nextReportNumber,
-                CreationDate = DateTime.Now,
-                SelectedShelter = selectedShelter?.Name ?? "Все приюты",
-                Pets = pets,
-                TotalCount = pets.Count
-            };
-
-            var xmlSerializer = new XMLFileManager();
-            xmlSerializer.Save(fullPath, reportData);
-
-            _nextReportNumber++;
-
-            return fullPath + ".xml";
-        }
-
-        /// Загружает отчет по номеру (автоматически определяет формат)
-        public ReportData LoadReport(int reportNumber)
-        {
-            // Ищем JSON файл
-            var jsonFiles = Directory.GetFiles(_reportsDirectory, $"Подборка_{reportNumber}_*.json");
-            if (jsonFiles.Length > 0)
-            {
-                string pathWithoutExt = Path.Combine(_reportsDirectory,
-                    Path.GetFileNameWithoutExtension(jsonFiles[0]));
-                var jsonSerializer = new JsonFileManager();
-                return jsonSerializer.Load<ReportData>(pathWithoutExt);
+                Directory.CreateDirectory(
+                    _reportsFolder);
             }
-
-            // Ищем XML файл
-            var xmlFiles = Directory.GetFiles(_reportsDirectory, $"Подборка_{reportNumber}_*.xml");
-            if (xmlFiles.Length > 0)
-            {
-                string pathWithoutExt = Path.Combine(_reportsDirectory,
-                    Path.GetFileNameWithoutExtension(xmlFiles[0]));
-                var xmlSerializer = new XMLFileManager();
-                return xmlSerializer.Load<ReportData>(pathWithoutExt);
-            }
-
-            return null;
         }
 
-        /// Получает все отчеты
-        public List<ReportData> GetAllReports()
+        public void CreateReport(
+            List<Pet> pets)
         {
-            var reports = new List<ReportData>();
+            if (pets == null || !pets.Any())
+                return;
 
-            // Загружаем JSON отчеты
-            var jsonFiles = Directory.GetFiles(_reportsDirectory, "*.json");
-            foreach (var file in jsonFiles)
+            string fileName =
+                $"Подборка_{DateTime.Now:dd_MM_yyyy_HH_mm_ss}.txt";
+
+            string fullPath =
+                Path.Combine(
+                    _reportsFolder,
+                    fileName);
+
+            StringBuilder builder = new();
+
+            builder.AppendLine(
+                "Отчет по животным");
+
+            builder.AppendLine(
+                $"Дата: {DateTime.Now}");
+
+            builder.AppendLine(
+                new string('-', 50));
+
+            foreach (var pet in pets)
             {
-                string pathWithoutExt = Path.Combine(_reportsDirectory,
-                    Path.GetFileNameWithoutExtension(file));
-                var jsonFileManager = new JsonFileManager();
-                var report = jsonFileManager.Load<ReportData>(pathWithoutExt);
-                if (report != null)
-                    reports.Add(report);
-            }
+                builder.AppendLine(
+                    $"Тип: {pet.GetType().Name}");
 
-            // Загружаем XML отчеты
-            var xmlFiles = Directory.GetFiles(_reportsDirectory, "*.xml");
-            foreach (var file in xmlFiles)
-            {
-                string pathWithoutExt = Path.Combine(_reportsDirectory,
-                    Path.GetFileNameWithoutExtension(file));
-                var xmlSerializer = new XMLFileManager();
-                var report = xmlSerializer.Load<ReportData>(pathWithoutExt);
-                if (report != null && !reports.Any(r => r.ReportNumber == report.ReportNumber))
-                    reports.Add(report);
-            }
+                builder.AppendLine(
+                    $"Кличка: {pet.Name}");
 
-            return reports.OrderBy(r => r.ReportNumber).ToList();
-        }
+                builder.AppendLine(
+                    $"Возраст: {pet.Age}");
 
-        private int GetNextReportNumber()
-        {
-            var reports = GetAllReports();
-            if (!reports.Any())
-                return 1;
+                builder.AppendLine(
+                    $"Вес: {pet.Weight}");
 
-            return reports.Max(r => r.ReportNumber) + 1;
-        }
+                builder.AppendLine(
+                    $"Особые приметы: {pet.SpecialMarks}");
 
-        /// Копирует данные из всех отчетов текущего формата в новый формат
-        public void CopyReportsToFormat(string targetFormat)
-        {
-            var allReports = GetAllReports();
+                builder.AppendLine(
+                    $"Клаустрофобия: {pet.HasClaustrophobia}");
 
-            foreach (var report in allReports)
-            {
-                string reportName = $"Подборка_{report.ReportNumber}_от_{report.CreationDate:yyyy-MM-dd_HH-mm-ss}";
-                string fullPath = Path.Combine(_reportsDirectory, reportName);
-
-                if (targetFormat.ToLower() == "json")
+                // CAT
+                if (pet is Cat cat)
                 {
-                    var jsonSerializer = new JsonFileManager();
-                    jsonSerializer.Save(fullPath, report);
+                    builder.AppendLine(
+                        $"Средняя длина шерсти: " +
+                        $"{cat.AverageFurLength}");
+
+                    builder.AppendLine(
+                        $"Ловит грызунов: " +
+                        $"{cat.CatchesRodentsme}");
                 }
-                else if (targetFormat.ToLower() == "xml")
+
+                // DOG
+                else if (pet is Dog dog)
                 {
-                    var xmlSerializer = new XMLFileManager();
-                    xmlSerializer.Save(fullPath, report);
+                    builder.AppendLine(
+                        $"Порода: {dog.Breed}");
+
+                    builder.AppendLine(
+                        $"Дрессирован: " +
+                        $"{dog.IsTrained}");
                 }
+
+                // RABBIT
+                else if (pet is Rabbit rabbit)
+                {
+                    builder.AppendLine(
+                        $"Шерсть: {rabbit.Fur}");
+
+                    builder.AppendLine(
+                        $"Длина ушей: " +
+                        $"{rabbit.LenghOfEarsg}");
+                }
+
+                // FOX
+                else if (pet is Fox fox)
+                {
+                    builder.AppendLine(
+                        $"Охотничьи навыки: " +
+                        $"{fox.HuntingSkills}");
+
+                    builder.AppendLine(
+                        $"Приручена: " +
+                        $"{fox.TamingLevel}");
+                }
+
+                // RACCOON
+                else if (pet is Raccoon raccoon)
+                {
+                    builder.AppendLine(
+                        $"Уровень разрушения: " +
+                        $"{raccoon.DestructionLevel}");
+
+                    builder.AppendLine(
+                        $"Ручной: " +
+                        $"{raccoon.HandFed}");
+                }
+
+                // PARROT
+                else if (pet is Parrot parrot)
+                {
+                    builder.AppendLine(
+                        $"Длина крыла: " +
+                        $"{parrot.WingLength}");
+
+                    builder.AppendLine(
+                        $"Разговаривает: " +
+                        $"{parrot.IsTalking}");
+                }
+
+                builder.AppendLine(
+                    new string('-', 50));
             }
+
+            File.WriteAllText(
+                fullPath,
+                builder.ToString());
         }
     }
-
-    /// DTO для хранения данных отчета
-    [Serializable]
-    public class ReportData
-    {
-        public int ReportNumber { get; set; }
-        public DateTime CreationDate { get; set; }
-        public string SelectedShelter { get; set; }
-        public List<Pet> Pets { get; set; }
-        public int TotalCount { get; set; }
-    }
-}
 }
