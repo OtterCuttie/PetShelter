@@ -1,72 +1,130 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Model.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Model.Data
 {
     public class JsonFileManager : FileManager
     {
-        public override string FileExtension => ".json";
-
-        private readonly JsonSerializerOptions _options;
-
-        public JsonFileManager()
+        public JsonFileManager(string name)
+            : base(name)
         {
-            _options = new JsonSerializerOptions
-            {
-                WriteIndented = true,  // Красивое форматирование
-                PropertyNamePolicy = JsonNamingPolicy.CamelCase,  // camelCase для JSON
-                IncludeFields = false,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
+
+        }
+        public JsonFileManager(string name,string folderPath,string fileName,string fileExtension): base(name, folderPath, fileName, "json")
+        {
+
         }
 
-        public override void Save<T>(string path, T data)
+        public override void Serialize(List<Shelter<Pet>> shelters)
         {
-            try
+            if (shelters == null)
+                return;
+
+            JArray sheltersArray = new();
+
+            foreach (var shelter in shelters)
             {
-                BackupIfExists(path);
-                string fullPath = GetFullPath(path);
-                string jsonString = System.Text.Json.JsonSerializer.Serialize(data, _options);
-                File.WriteAllText(fullPath, jsonString, System.Text.Encoding.UTF8);
+                JObject shelterObject = new();
+
+                shelterObject["Name"] =shelter.Name;
+
+                shelterObject["Capacity"] =shelter.Capacity;
+
+                shelterObject["HasOpenArea"] =shelter.HasOpenArea;
+
+                JArray petsArray = new();
+
+                foreach (var pet in shelter.GetPets())
+                {
+                    JObject petObject =JObject.FromObject(pet);
+
+                    // сохраняем тип животного
+                    petObject["Type"] =pet.GetType().Name;
+
+                    petsArray.Add(petObject);
+                }
+
+                shelterObject["Pets"] =petsArray;
+
+                sheltersArray.Add(shelterObject);
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Ошибка сохранения JSON: {ex.Message}", ex);
-            }
+
+            Directory.CreateDirectory(FolderPath);
+
+            File.WriteAllText(FullPath,sheltersArray.ToString());
         }
 
-        public override T Load<T>(string path)
+        public override List<Shelter<Pet>>
+            Deserialize()
         {
-            try
+            if (!File.Exists(FullPath))return null;
+
+            string json =File.ReadAllText(FullPath);
+
+            JArray sheltersArray =JArray.Parse(json);
+
+            List<Shelter<Pet>> shelters =new();
+
+            foreach (JObject shelterObject in sheltersArray)
             {
-                string fullPath = GetFullPath(path);
-                if (!File.Exists(fullPath))
-                    return default(T);
+                Shelter<Pet> shelter =new Shelter<Pet>(shelterObject["Name"].ToString(), (int)shelterObject["Capacity"], (bool)shelterObject["HasOpenArea"]);
 
-                string jsonString = File.ReadAllText(fullPath, System.Text.Encoding.UTF8);
-                return System.Text.Json.JsonSerializer.Deserialize<T>(jsonString, _options);
+                JArray petsArray =(JArray)shelterObject["Pets"];
+
+                foreach (JObject petObject in petsArray)
+                {
+                    string type =petObject["Type"]?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(type))
+                        continue;
+
+                    // удаляем Type перед созданием объекта
+                    petObject.Remove("Type");
+
+                    Pet pet = null;
+
+                    switch (type)
+                    {
+                        case "Cat":
+                            pet =petObject.ToObject<Cat>();
+                            break;
+
+                        case "Dog":
+                            pet =petObject.ToObject<Dog>();
+                            break;
+
+                        case "Rabbit":
+                            pet =petObject.ToObject<Rabbit>();
+                            break;
+
+                        case "Fox":
+                            pet =petObject.ToObject<Fox>();
+                            break;
+
+                        case "Parrot":
+                            pet =petObject.ToObject<Parrot>();
+                            break;
+
+                        case "Raccoon":
+                            pet =petObject.ToObject<Raccoon>();
+                            break;
+                    }
+
+                    if (pet != null)
+                    {
+                        shelter.AddPet(pet);
+                    }
+                }
+
+                shelters.Add(shelter);
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Ошибка загрузки JSON: {ex.Message}", ex);
-            }
-        }
-
-        /// Специальный метод для сохранения коллекции приютов
-        public void SaveShelters(string path, List<Shelter> shelters)
-        {
-            Save(path, shelters);
-        }
-
-        /// Загрузка коллекции приютов
-        public List<Shelter> LoadShelters(string path)
-        {
-            return Load<List<Shelter>>(path) ?? new List<Shelter>();
+            return shelters;
         }
     }
 }
