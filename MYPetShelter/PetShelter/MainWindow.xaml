@@ -62,14 +62,14 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Grid.Row="0" Grid.Column="0" Content="Выберите приют:"/>
-                <ComboBox x:Name="cmShelters" Grid.Row="0" Grid.Column="1"
+                <ComboBox x:Name="cboxShelters" Grid.Row="0" Grid.Column="1"
                           DisplayMemberPath="Name"/>
                 <Label Grid.Row="1" Grid.Column="0" Content="Вид животного:"/>
                 <ComboBox x:Name="cm" Grid.Row="0" Grid.Column="1"
           DisplayMemberPath="Name"/>
                 <!--Выбор вида животного-->
                 <Label Grid.Row="1" Grid.Column="0" Content="Вид животного:"/>
-                <ComboBox x:Name="cmAnimalTypes" Grid.Row="1" Grid.Column="1">
+                <ComboBox x:Name="cboxAnimalTypes" Grid.Row="1" Grid.Column="1">
                     <ComboBoxItem Content="Все животные" IsSelected="True"/>
                     <Separator/>
                     <ComboBoxItem Content="🐱 Кошка"/>
@@ -93,7 +93,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Label Grid.Column="0" Content="Формат отчёта:"/>
-                <ComboBox x:Name="cmReportFormat" Grid.Column="1" SelectedIndex="0">
+                <ComboBox x:Name="cboxrprtFormat" Grid.Column="1" SelectedIndex="0">
                     <ComboBoxItem Content="JSON"/>
                     <ComboBoxItem Content="XML"/>
                 </ComboBox>
