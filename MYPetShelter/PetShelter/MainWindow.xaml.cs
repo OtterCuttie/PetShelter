@@ -1,12 +1,13 @@
 using Model;
 using Model.Data;
-using Model.Core;
-using PetShelter.Wpf;
+using PetShelter;
 using System;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Model.Core;
+using System.Collections.Generic;
 
 namespace PetShelter
 {
@@ -14,12 +15,17 @@ namespace PetShelter
     {
         // Поле для хранения менеджера данных
         private DataManager _dataManager;
+        private ShelterRepository _shelterRepository;
+        private bool _isInitializing = true;
 
         // Конструктор - вызывается при запуске программы
         public MainWindow()
         {
             InitializeComponent(); // Загружает кнопки и списки из XAML
-            _dataManager = new DataManager();   //  менеджер данных
+            var fileManager = new JsonFileManager("Shelters", "Data", "shelters", "json");
+            var reportGenerator = new ReportGenerator();
+            _dataManager = new DataManager(fileManager, reportGenerator);   //  менеджер данных
+            _shelterRepository = new ShelterRepository(_dataManager);
             LoadShelters();
             LoadrprtFormat();
             _isInitializing = false;
@@ -29,7 +35,7 @@ namespace PetShelter
         private void LoadShelters()
         {
             // Получаем все приюты из репозитория
-            var shelters = _dataManager.ShelterRepository.GetAll().ToList();
+            var shelters = _shelterRepository.GetAll().ToList();
 
             // Добавляем пункт "Все приюты" в начало списка
             var allSheltersItem = new Shelter<Pet>("Все приюты", 0, false);
@@ -67,12 +73,23 @@ namespace PetShelter
             if (ckOnlyOpenArea.IsChecked == true) onlyOpenArea = true; // если пользователь отметил галочку
 
             // 4.) фильтрация питомцев
-            //var filteredPets = _dataManager.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
-            var filteredPets = _dataManager.ShelterRepository.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
+            var filteredPets = _dataManager.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
         }
 
+        // 5.) формат отчёта
+        private void LoadReportFormat()
+        {
+            // Создаём нужный пункт и делаем его выбранным
+            ComboBoxItem selectedItem = new ComboBoxItem();
 
-             private void CboxRprtFormat(object sender, SelectionChangedEventArgs e)
+            if (_dataManager.CurrentReportFormat == "json")
+                selectedItem.Content = "JSON";
+            else
+                selectedItem.Content = "XML";
+
+            cboxReportFormat.SelectedItem = selectedItem;
+        }
+        private void CboxRprtFormat(object sender, SelectionChangedEventArgs e)
         {
             // Пропускаем, если это начальная инициализация
             if (_isInitializing) return;
@@ -99,14 +116,6 @@ namespace PetShelter
                 File.WriteAllText(newFile, text);
             }
         }
-
-
-        // 5.) формат отчёта
-        ComboBoxItem selectedFormat = (ComboBoxItem)cboxReportFormat.SelectedItem;
-            object contentF = selectedFormat.Content;               
-            string formatName = contentF.ToString();
-            if (formatName == "JSON")   _dataManager.CurrentReportFormat = "json";
-            else    _dataManager.CurrentReportFormat = "xml";
 
                                                              // 6.) Сохраняем отчёт в файл
             string rprtPath = _dataManager.SaveCurrentReport(filteredPets, chkShelter);
