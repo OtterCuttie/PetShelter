@@ -11,8 +11,8 @@ namespace Model.Data
 {
     public class DataManager
     {
-        private readonly FileManager _fileManager;
-        private readonly ReportGenerator _reportGenerator;
+        private  FileManager _fileManager;
+        private  ReportGenerator _reportGenerator;
 
         public DataManager(FileManager fileManager,ReportGenerator reportGenerator)
         {
@@ -39,6 +39,17 @@ namespace Model.Data
             List<Pet> pets)
         {
             _reportGenerator.CreateReport(pets);
+        }
+        public void ChangeFileManager(FileManager newManager)
+        {
+            if (newManager == null)
+                return;
+
+            var shelters = LoadShelters();
+
+            _fileManager = newManager;
+
+            SaveShelters(shelters);
         }
     }
 }
