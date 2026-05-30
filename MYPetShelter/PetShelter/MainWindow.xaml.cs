@@ -1,5 +1,6 @@
 using Model;
 using Model.Data;
+using Model.Core;
 using PetShelter.Wpf;
 using System;
 using System.IO;
@@ -44,7 +45,7 @@ namespace PetShelter
         private void BtnShow_Animals(object sender, RoutedEventArgs e)
         {
             Shelter<Pet> chkShelter = null;
-            if (cboxShelters.SelectedItem == null)     chkShelter = null;
+            if (cboxShelters.SelectedItem == null) chkShelter = null;
             chkShelter = (Shelter<Pet>)cboxShelters.SelectedItem;         // 1.) выбранный приют
             if (chkShelter.Name == "Все приюты") chkShelter = null;
 
@@ -54,19 +55,21 @@ namespace PetShelter
             object contentT = chkType.Content;
             string typeText = contentT.ToString();
 
-            if (typeText == "Cat")      animalType = typeof(Cat);
-            else if (typeText == "Dog")     animalType = typeof(Dog);
-            else if (typeText == "Rabbit")      animalType = typeof(Rabbit);
-            else if (typeText == "Fox")     animalType = typeof(Fox);
-            else if (typeText == "Raccoon")   animalType = typeof(Raccoon);
-            else if (typeText == "Parrot")      animalType = typeof(Parrot);
+            if (typeText == "Cat") animalType = typeof(Cat);
+            else if (typeText == "Dog") animalType = typeof(Dog);
+            else if (typeText == "Rabbit") animalType = typeof(Rabbit);
+            else if (typeText == "Fox") animalType = typeof(Fox);
+            else if (typeText == "Raccoon") animalType = typeof(Raccoon);
+            else if (typeText == "Parrot") animalType = typeof(Parrot);
 
-                                                            // 3.) Проверяем, нужна ли только открытая территория
+            // 3.) Проверяем, нужна ли только открытая территория
             bool? onlyOpenArea = null; // bool? позволяет сделать переменную null (сам bool только true/false)
-            if (ckOnlyOpenArea.IsChecked == true)   onlyOpenArea = true; // если пользователь отметил галочку
+            if (ckOnlyOpenArea.IsChecked == true) onlyOpenArea = true; // если пользователь отметил галочку
 
-                                                            // 4.) фильтрация питомцев
-            var filteredPets = _dataManager.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
+            // 4.) фильтрация питомцев
+            //var filteredPets = _dataManager.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
+            var filteredPets = _dataManager.ShelterRepository.GetFilteredPets(chkShelter, animalType, onlyOpenArea);
+        }
 
 
              private void CboxRprtFormat(object sender, SelectionChangedEventArgs e)
