@@ -18,7 +18,24 @@ namespace Model.Data
             _dataManager = dataManager;
             LoadOrCreateShelters();
         }
+        public List<Pet> GetFilteredPets(Type animalType = null)
+        {
+            var result = new List<Pet>();
 
+            foreach (var shelter in _shelters)
+            {
+                if (animalType == null)
+                {
+                    result.AddRange(shelter.GetPets());
+                }
+                else
+                {
+                    result.AddRange(shelter.Filter(animalType));
+                }
+            }
+
+            return result;
+        }
         private void LoadOrCreateShelters()
         {
             var loadedShelters =_dataManager.LoadShelters();
@@ -38,6 +55,17 @@ namespace Model.Data
             return _shelters.ToList();
         }
 
+        public List<Pet> GetAllPets()
+        {
+            var allPets = new List<Pet>();
+
+            foreach (var shelter in _shelters)
+            {
+                allPets.AddRange(shelter.GetPets());
+            }
+
+            return allPets;
+        }
         public Shelter<Pet> GetByName(string name)
         {
             return _shelters.FirstOrDefault(shelter => shelter.Name == name);
@@ -61,8 +89,7 @@ namespace Model.Data
             _dataManager.SaveShelters(_shelters);
         }
 
-        private List<Shelter<Pet>>
-            CreateTestShelters()
+        private List<Shelter<Pet>> CreateTestShelters()
         {
             var allPets = CreateTestPets();
 
