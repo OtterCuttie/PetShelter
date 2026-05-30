@@ -1,27 +1,70 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Model;
+using Model.Core;
+using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using System.Xml.Linq;
 
 namespace PetShelter
 {
-    /// <summary>
-    /// Логика взаимодействия для PetD.xaml
-    /// </summary>
-    public partial class PetD : Window
+    public partial class AddPetDialog : Window
     {
-        public PetD()
+        public Pet NewPet { get; private set; }
+        public AddPetDialog()
         {
             InitializeComponent();
+        }
+        // Обработчик кнопки "Добавить"
+        private void BtnOk_Click(object source, RoutedEventArgs a)
+        {
+            if (string.IsNullOrEmpty(txtName.Text))
+            {
+                MessageBox.Show("Кличка вашего питомца: ", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);  return;
+            }
+
+            string tAge = txtAge.Text;
+            bool isAge = int.TryParse(tAge, out int age);
+            if (!isAge || age<0)
+            {
+                MessageBox.Show("Возраст вашего питомца: ", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            string tWeight = txtWeight.Text;
+            bool isWeight = int.TryParse(tAge, out int weight);
+            if (!isWeight || weight <= 0)
+            {
+                MessageBox.Show("Вес вашего питомца: ", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string name = txtName.Text;
+            string marks = txtSpecialMarks.Text;
+            bool hasClfb = chkClaustrophobia.IsChecked == true;
+
+            string type = (cboxPetType.SelectedItem as ComboBoxItem)?.Content.ToString();
+
+            if (type == "Cat")
+                NewPet = new Cat(name, age, weight, marks, hasClaustro);
+            else if (type == "Dog")
+                NewPet = new Dog(name, age, weight, marks, hasClaustro);
+            else if (type == "Rabbit")
+                NewPet = new Rabbit(name, age, weight, marks, hasClaustro);
+            else if (type == "Fox")
+                NewPet = new Fox(name, age, weight, marks, hasClaustro);
+            else if (type == "Raccoon")
+                NewPet = new Raccoon(name, age, weight, marks, hasClaustro);
+            else
+                NewPet = new Parrot(name, age, weight, marks, hasClaustro);
+
+            DialogResult = true;
+            Close();
+        }
+
+        // Обработчик кнопки "Отмена"
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            Close();
         }
     }
 }
