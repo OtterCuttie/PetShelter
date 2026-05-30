@@ -13,11 +13,31 @@ namespace Model.Data
     {
         private  FileManager _fileManager;
         private  ReportGenerator _reportGenerator;
+        private string _currentReportFormat = "json";
+        public string CurrentReportFormat
+        {
+            get => _currentReportFormat;
 
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    return;
+
+                if (_currentReportFormat == value)
+                    return;
+
+                string oldFormat = _currentReportFormat;
+
+                _currentReportFormat = value;
+
+                OnFormatChanged(oldFormat, value);
+            }
+        }
         public DataManager(FileManager fileManager,ReportGenerator reportGenerator)
         {
             _fileManager = fileManager;
             _reportGenerator = reportGenerator;
+            _currentReportFormat = fileManager.FileExtension;
         }
 
         // Сохранение приютов
@@ -39,6 +59,22 @@ namespace Model.Data
             List<Pet> pets)
         {
             _reportGenerator.CreateReport(pets);
+        }
+        private void OnFormatChanged(string oldFormat, string newFormat)
+        {
+            FileManager newManager = newFormat switch
+            {
+                "json" when !(_fileManager is JsonFileManager) =>
+                    new JsonFileManager(_fileManager.Name, _fileManager.FolderPath, _fileManager.FileName, "json"),
+
+                //"xml" when !(_fileManager is XmlFileManager) =>
+                //    new XmlFileManager(_fileManager.Name, _fileManager.FolderPath, _fileManager.FileName, "xml"),
+
+                _ => null
+            };
+
+            if (newManager != null)
+                ChangeFileManager(newManager);
         }
         public void ChangeFileManager(FileManager newManager)
         {
